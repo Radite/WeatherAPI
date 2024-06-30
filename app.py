@@ -1,5 +1,7 @@
-import requests
+import tkinter as tk
+from tkinter import messagebox
 from datetime import datetime
+import requests
 import configparser
 import os
 
@@ -30,69 +32,65 @@ def fetch_weather_data_by_city(city, country):
     else:
         return None
 
-def main():
-    while True:
-        user_input = input("Enter 1 to get weather data by city, 2 to get hourly data by coordinates, or 'exit' to quit: ")
-        
-        if user_input.lower() == 'exit':
-            break
-        elif user_input == '1':
-            city_country = input("Enter city and country (e.g., Kingston, JM): ")
-            city, country = map(str.strip, city_country.split(','))
-            weather_data = fetch_weather_data_by_city(city, country)
-            if weather_data:
-                print(weather_data)
-                weather = weather_data['weather'][0]['main']
-                temp = round(weather_data['main']['temp'])
-                
-                if 'rain' in weather_data:
-                    precipitation = weather_data['rain']
-                    print(f"The precipitation in {city} ({country}) is: {precipitation} mm")
-                elif 'snow' in weather_data:
-                    precipitation = weather_data['snow']
-                    print(f"The precipitation in {city} ({country}) is: {precipitation} mm")
-                else:
-                    print(f"No precipitation data available for {city} ({country})")
-                
-                print(f"The weather in {city} ({country}) is: {weather}")
-                print(f"The temperature in {city} ({country}) is: {temp}ºF")
-            else:
-                print(f"No weather data found for {city}, {country}")
-        
-        elif user_input == '2':
-            lat = float(input("Enter latitude: "))
-            lon = float(input("Enter longitude: "))
-            date_time_str = input("Enter date and time (YYYY-MM-DD HH:MM:SS) or press Enter for current time: ")
-            
-            if date_time_str:
-                date_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S')
-            else:
-                date_time = None
-            
-            weather_data = fetch_weather_data_by_coords(lat, lon, date_time)
-            
-            if weather_data:
-                print(weather_data)
-                hourly_data = weather_data.get('hourly', [])
-                if hourly_data:
-                    while True:
-                        try:
-                            hour_filter = int(input("Enter the hour (1-24) to see detailed weather or 'exit': "))
-                            if hour_filter < 1 or hour_filter > 24:
-                                print("Please enter a valid hour between 1 and 24.")
-                                continue
-                            else:
-                                print(f"Weather details for hour {hour_filter}:")
-                                print(hourly_data[hour_filter - 1])
-                        except ValueError:
-                            if input("Invalid input. Enter 'exit' to quit or press Enter to try again: ").lower() == 'exit':
-                                break
-                            continue
-            else:
-                print("No weather data found for the given coordinates.")
-        
-        else:
-            print("Invalid input. Please enter 1, 2, or 'exit'.")
+def get_weather_data(city, country):
+    weather_data = fetch_weather_data_by_city(city, country)
+    if weather_data:
+        return weather_data
+    else:
+        messagebox.showerror("Error", f"No weather data found for {city}, {country}")
+        return None
 
-if __name__ == "__main__":
-    main()
+def show_weather_data():
+    city = entry_city.get()
+    country = entry_country.get()
+
+    weather_data = get_weather_data(city, country)
+    if weather_data:
+        weather = weather_data['weather'][0]['main']
+        temp = round(weather_data['main']['temp'])
+
+        if 'rain' in weather_data:
+            precipitation = weather_data['rain']
+            precipitation_text = f"The precipitation is: {precipitation} mm"
+        elif 'snow' in weather_data:
+            precipitation = weather_data['snow']
+            precipitation_text = f"The precipitation is: {precipitation} mm"
+        else:
+            precipitation_text = "No precipitation data available"
+
+        weather_text = f"The weather is: {weather}"
+        temperature_text = f"The temperature is: {temp}ºF"
+
+        label_weather.config(text=weather_text)
+        label_temperature.config(text=temperature_text)
+        label_precipitation.config(text=precipitation_text)
+
+def on_submit():
+    show_weather_data()
+
+# Create the main window
+root = tk.Tk()
+root.title("Weather Information")
+
+# Create widgets
+label_city = tk.Label(root, text="City:")
+label_country = tk.Label(root, text="Country:")
+entry_city = tk.Entry(root)
+entry_country = tk.Entry(root)
+button_submit = tk.Button(root, text="Get Weather", command=on_submit)
+label_weather = tk.Label(root, text="")
+label_temperature = tk.Label(root, text="")
+label_precipitation = tk.Label(root, text="")
+
+# Arrange widgets using grid layout
+label_city.grid(row=0, column=0, padx=10, pady=10)
+entry_city.grid(row=0, column=1, padx=10, pady=10)
+label_country.grid(row=1, column=0, padx=10, pady=10)
+entry_country.grid(row=1, column=1, padx=10, pady=10)
+button_submit.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+label_weather.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+label_temperature.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+label_precipitation.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+
+# Start the main loop
+root.mainloop()
